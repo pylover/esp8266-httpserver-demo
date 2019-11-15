@@ -1,3 +1,5 @@
 [submodule "httpserver"]
 	path = httpserver
 	url = git@github.com:pylover/esp8266-httpserver.git
+	update = rebase
+	branch = master
