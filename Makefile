@@ -128,17 +128,23 @@ INCLUDES := $(INCLUDES) \
 PDIR = $(SDKDIR)/
 sinclude $(SDKDIR)/Makefile
 
-BAUDRATE = 576000
-ESPTOOL = esptool.py --baud $(BAUDRATE) write_flash -u --flash_mode qio --flash_freq 40m
+BAUDRATE = 115200
+PORT = /dev/ttyUSB0
+ESPTOOL = esptool.py --baud $(BAUDRATE) --port $(PORT)
+ESPTOOL_WRITE = $(ESPTOOL)  write_flash -u --flash_mode qio --flash_freq 40m
+
 erase_flash:
 	 $(ESPTOOL) 0x0 $(SDK_PATH)/bin/blank-1mb.bin
+
+screen:
+	screen $(PORT) $(BAUDRATE)
 
 #map2user1:
 #	make clean
 #	make COMPILE=gcc BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=2
 #
 #flash_map2user1: map2user1
-#	$(ESPTOOL) --flash_size 1MB  \
+#	$(ESPTOOL_WRITE) --flash_size 1MB  \
 #		0x0 	$(SDK_PATH)/bin/boot_v1.7.bin \
 #		0x1000  $(BIN_DIR)/upgrade/user1.1024.new.2.bin \
 #		0xfc000 $(SDK_PATH)/bin/esp_init_data_default_v08.bin \
@@ -155,7 +161,7 @@ erase_flash:
 #	make COMPILE=gcc BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=3
 #
 #flash_map3user1:
-#	$(ESPTOOL) --flash_size 2MB  \
+#	$(ESPTOOL_WRITE) --flash_size 2MB  \
 #		0x0 	$(SDK_PATH)/bin/boot_v1.7.bin \
 #		0x1000  $(BIN_PATH)/upgrade/user1.2048.new.3.bin \
 #		0x1fc000 $(SDK_PATH)/bin/esp_init_data_default_v08.bin \
@@ -171,7 +177,7 @@ erase_flash:
 #	make COMPILE=gcc BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=5
 #
 #flash_map5user1: map5user1
-#	$(ESPTOOL) --flash_size 2MB  \
+#	$(ESPTOOL_WRITE) --flash_size 2MB  \
 #		0x0 	$(SDK_PATH)/bin/boot_v1.7.bin \
 #		0x1000  $(BIN_PATH)/upgrade/user1.2048.new.5.bin \
 #		0x1fc000 $(SDK_PATH)/bin/esp_init_data_default_v08.bin \
@@ -183,7 +189,7 @@ map6user1:
 	make COMPILE=gcc BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=6
 
 flash_map6user1: map6user1
-	$(ESPTOOL) --flash_size 4MB-c1  \
+	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0x0 	$(SDK_PATH)/bin/boot_v1.7.bin \
 		0x1000  $(BIN_PATH)/upgrade/user1.4096.new.6.bin \
 		0x3fc000 $(SDK_PATH)/bin/esp_init_data_default_v08.bin \
@@ -191,17 +197,22 @@ flash_map6user1: map6user1
 		0x3fe000 $(SDK_PATH)/bin/blank.bin 
 
 cleanup_map6user1:
-	$(ESPTOOL) --flash_size 4MB-c1  \
+	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0xf8000 $(SDK_PATH)/bin/blank.bin \
 		0xf9000 $(SDK_PATH)/bin/blank.bin \
 		0xfa000 $(SDK_PATH)/bin/blank.bin 
 
 assets_map6user1:
-	$(ESPTOOL) --flash_size 4MB-c1  \
+	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0x200000 assets/favicon-16x16.png 
 
+map6user2:
+	make clean
+	make COMPILE=gcc BOOT=new APP=2 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=6
+
+HOST := 192.168.0.108
 fota: map6user2
-	-curl 192.168.0.162/firmware -XPOST -F"firmware=@../bin/upgrade/user2.4096.new.6.bin"
+	-curl $(HOST)/firmware -XPOST -F"firmware=@$(SDK_PATH)/../bin/upgrade/user2.4096.new.6.bin"
 	-echo
 
 .PHONY: 
