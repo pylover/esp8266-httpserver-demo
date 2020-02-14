@@ -200,5 +200,8 @@ assets_map6user1:
 	$(ESPTOOL) --flash_size 4MB-c1  \
 		0x200000 assets/favicon-16x16.png 
 
+fota: map6user2
+	-curl 192.168.0.162/firmware -XPOST -F"firmware=@../bin/upgrade/user2.4096.new.6.bin"
+	-echo
 
 .PHONY: 
