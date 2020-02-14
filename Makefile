@@ -11,6 +11,12 @@
 #     subdir/lib to be extracted and rolled up into
 #     a generated lib/image xxx.a ()
 #
+
+# Edit this variables before using the make file
+HOST := 192.168.0.108
+BAUDRATE = 115200
+PORT = /dev/ttyUSB0
+
 TARGET = eagle
 #FLAVOR = release
 FLAVOR = debug
@@ -128,14 +134,14 @@ INCLUDES := $(INCLUDES) \
 PDIR = $(SDKDIR)/
 sinclude $(SDKDIR)/Makefile
 
-BAUDRATE = 115200
-PORT = /dev/ttyUSB0
 ESPTOOL = esptool.py --baud $(BAUDRATE) --port $(PORT)
 ESPTOOL_WRITE = $(ESPTOOL)  write_flash -u --flash_mode qio --flash_freq 40m
 
+.PHONY: erase_flash
 erase_flash:
 	 $(ESPTOOL) 0x0 $(SDK_PATH)/bin/blank-1mb.bin
 
+.PHONY: screen
 screen:
 	screen $(PORT) $(BAUDRATE)
 
@@ -184,10 +190,12 @@ screen:
 #		0x1fb000 $(SDK_PATH)/bin/blank.bin \
 #		0x1fe000 $(SDK_PATH)/bin/blank.bin \
 
+.PHONY: map6user1
 map6user1:
 	make clean
 	make COMPILE=gcc BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=6
 
+.PHONY: flash_map6user1
 flash_map6user1: map6user1
 	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0x0 	$(SDK_PATH)/bin/boot_v1.7.bin \
@@ -196,23 +204,24 @@ flash_map6user1: map6user1
 		0x3fb000 $(SDK_PATH)/bin/blank.bin \
 		0x3fe000 $(SDK_PATH)/bin/blank.bin 
 
+.PHONY: cleanup_map6user1
 cleanup_map6user1:
 	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0xf8000 $(SDK_PATH)/bin/blank.bin \
 		0xf9000 $(SDK_PATH)/bin/blank.bin \
 		0xfa000 $(SDK_PATH)/bin/blank.bin 
 
+.PHONY: assets_map6user1
 assets_map6user1:
 	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
 		0x200000 assets/favicon-16x16.png 
 
+.PHONY: map6user2
 map6user2:
 	make clean
 	make COMPILE=gcc BOOT=new APP=2 SPI_SPEED=40 SPI_MODE=QIO SPI_SIZE_MAP=6
 
-HOST := 192.168.0.108
 fota: map6user2
 	-curl $(HOST)/firmware -XPOST -F"firmware=@$(SDK_PATH)/../bin/upgrade/user2.4096.new.6.bin"
 	-echo
 
-.PHONY: 
