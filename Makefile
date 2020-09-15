@@ -15,6 +15,8 @@
 # Edit this variables before using the make file
 HOST := 192.168.0.108
 BAUDRATE = 115200
+#FLASHBAUDRATE = 230401
+FLASHBAUDRATE = 460800
 PORT = /dev/ttyUSB0
 
 TARGET = eagle
@@ -134,7 +136,7 @@ INCLUDES := $(INCLUDES) \
 PDIR = $(SDKDIR)/
 sinclude $(SDKDIR)/Makefile
 
-ESPTOOL = esptool.py --baud $(BAUDRATE) --port $(PORT)
+ESPTOOL = esptool.py --baud $(FLASHBAUDRATE) --port $(PORT)
 ESPTOOL_WRITE = $(ESPTOOL)  write_flash -u --flash_mode qio --flash_freq 40m
 
 .PHONY: erase_flash

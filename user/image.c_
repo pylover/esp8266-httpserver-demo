@@ -1,0 +1,112 @@
+static Multipart mp;
+static char buff[RB_BUFFSIZE];
+static RingBuffer rb = {RB_BUFFSIZE, 0, 0, buff};
+static MultipartField *cf = NULL;
+
+
+#define flash_read(sector, buff, sectors) spi_flash_read( \
+    sector * SPI_FLASH_SEC_SIZE, (uint32_t*) buff, sectors * 4) 
+
+
+
+static ICACHE_FLASH_ATTR
+void webadmin_image_get(Request *req, char *body, uint32_t body_length, 
+		uint32_t more) {
+	
+	char buffer[4 * 124];
+    /* Read the first sector to determine the content length */
+	int result = flash_read(IMAGE_FLASH_SECTOR, buffer, 1);
+	if (result != SPI_FLASH_RESULT_OK) {
+		os_printf("SPI Flash read failed: %d\r\n", result);
+		httpserver_response_notok(req, HTTPSTATUS_SERVERERROR);
+		return;
+	}
+    
+    /* Check Magic header */
+    if (os_strncpy(buffer, "JPEG", 4)) {
+		os_printf("Invalid JPEG header.\r\n", result);
+		httpserver_response_notok(req, HTTPSTATUS_SERVERERROR);
+        return;
+    }
+    
+    uint32_t *len = &(buffer + 4);
+
+    httpserver_response_start(
+		Request *req,
+		char *status, 
+		char *content_type, 
+		uint32_t content_length, 
+		char **headers, 
+		uint8_t headers_count
+	);
+
+
+
+	if (result != SPI_FLASH_RESULT_OK) {
+		os_printf("SPI Flash read failed: %d\r\n", result);
+		httpserver_response_notok(req, HTTPSTATUS_SERVERERROR);
+		return;
+	}
+	httpserver_response_jpeg(req, buffer, imagelen);
+}
+
+static ICACHE_FLASH_ATTR
+void webadmin_favicon_post(Request *req, char *body, uint32_t body_length, 
+		uint32_t more) {
+
+	os_printf("body: %s length: %d\r\n", body, body_length);
+	int err;
+	if (body_length <= 0) {
+        return;
+	}
+	
+	if (mp.status == MP_IDLE) {
+		err = mp_init(&mp, req->contenttype, _mp_callback);
+		if (err != MP_OK) {
+			os_printf("Cannot init multipart: %d\r\n", err);
+			goto badrequest;
+		}
+		rb_reset(&rb);
+	}
+	
+	espconn_recv_hold(req->conn);
+	if ((err = rb_safepush(&rb, body, body_length)) == RB_FULL) {
+		os_printf("buffer full\r\n");
+		goto badrequest;
+	}
+
+    if (rb_used(&rb) < SECTOR_SIZE) {
+        goto more;
+    }
+
+    err = mp_feedbybuffer(&mp, &rb, SECTOR_SIZE);
+	espconn_recv_unhold(req->conn);
+	switch (err) {
+		case MP_DONE:
+            os_printf("Upload done.\r\n");
+			goto done;
+
+		case MP_MORE:
+            goto more;
+
+		default:
+            os_printf("BAD Request: MP_*\r\n");
+			goto badrequest;
+	}
+
+more:
+    os_printf("Upload MORE........\r\n");
+	return;
+
+done:
+	mp_close(&mp);
+	httpserver_response_text(req, HTTPSTATUS_OK, "OK", 2);
+	return;
+
+badrequest:
+	mp_close(&mp);
+	httpserver_response_notok(req, HTTPSTATUS_BADREQUEST);
+	
+}
+
+

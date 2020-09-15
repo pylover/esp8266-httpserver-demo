@@ -1,16 +1,42 @@
 #include "params.h"
 #include "httpserver.h"
 #include "multipart.h"
+#include "querystring.h"
 
 #include <osapi.h>
 #include <mem.h>
 
+/*
+ * Flash Map
+ * Start      Size (KB)   Comment
+ * 0x000000      4        boot
+ * 0x001000    424        user1
+ * 0x06B000    564        *FREE
+ * .
+ * .
+ * .
+ *
+ * 0x0F8000     16        WIFI Params
+ * 0x0FC000     16        User private params
+ * 0x100000      4        *FREE
+ * 0x101000    424        user2
+ * 0x16B000   2624        *FREE
+ * .
+ * .
+ * .
+ * 0x3FB000      4        RF Calibrate
+ * 0x3FC000      4        Default RF params 
+ * 0x3FD000     12        System Parameters 
+ * -----------------------------------------
+ * Sum        4096
+ */
 
 #define FAVICON_SIZE	495
 #define FAVICON_FLASH_SECTOR	0x200	
 #define HTML_HEADER \
 	"<!DOCTYPE html><html>" \
 	"<head><title>ESP8266 Firstboot config</title></head><body>\r\n" 
+
 #define HTML_FOOTER "\r\n</body></html>\r\n"
 
 #define HTML_INDEX \
@@ -29,18 +55,18 @@
 	"PSK: <input name=\"psk\" value=\"%s\"/><br/>" \
 	"<input type=\"submit\" value=\"Reboot\" />" \
 	"</form>" \
+	"<h4>Firmware</h4>" \
+	"<form action=\"/firmware\" method=\"post\" " \
+	"enctype=\"multipart/form-data\">" \
+	"<input name=\"firmware\" type=\"file\"/><br/>" \
+	"<input type=\"submit\" value=\"Upgrade\" />" \
+	"</form>" \
 	HTML_FOOTER
 
 static Params *params;
 static ETSTimer ff;
 
-#define BUFFSIZE	2048
-
-static Multipart mp;
-static char buff[BUFFSIZE];
-static RingBuffer rb = {BUFFSIZE, 0, 0, buff};
-static MultipartField *cf = NULL;
-
+#define RB_BUFFSIZE	   (2048 * 3)
 
 
 
@@ -83,7 +109,7 @@ static ICACHE_FLASH_ATTR
 void webadmin_set_params(Request *req, char *body, uint32_t body_length, 
 		uint32_t more) {
 	body[body_length] = 0;
-	httpserver_parse_querystring(body, _update_params_field);  
+	querystring_parse(body, _update_params_field);  
 	if (!params_save(params)) {
 		httpserver_response_notok(req, HTTPSTATUS_SERVERERROR);
 		return;
@@ -111,6 +137,17 @@ void webadmin_favicon(Request *req, char *body, uint32_t body_length,
 }
 
 
+void _mp_callback(MultipartField *f, char *body, Size bodylen, bool last) {
+	if (os_strncmp(f->name, "favicon", 7) != 0) {
+		return;
+	}
+    char temp[1500];
+    os_strncpy(temp, body, bodylen);
+    os_printf("====Start====\r\n%s\r\n====End====\r\n", temp);
+}
+
+
+
 static ICACHE_FLASH_ATTR
 void webadmin_index(Request *req, char *body, uint32_t body_length, 
 		uint32_t more) {
@@ -119,10 +156,13 @@ void webadmin_index(Request *req, char *body, uint32_t body_length,
 	httpserver_response_html(req, HTTPSTATUS_OK, buffer, len);
 }
 
+//#include "image.c"
 
 static HttpRoute routes[] = {
 	{"POST", 	"/params",			webadmin_set_params				},
 	{"GET",  	"/params",			webadmin_get_params				},
+//	{"POST",	"/image.jpg",		webadmin_image_post		        },
+//	{"GET",	    "/image.jpg",		webadmin_image_get		        },
 	{"GET",  	"/favicon.ico",		webadmin_favicon				},
 	{"GET",  	"/",				webadmin_index					},
 	{ NULL }
