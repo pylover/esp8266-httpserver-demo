@@ -1,30 +1,26 @@
-# esp8266-httpserver-demo
-https://github.com/pylover/esp8266-httpserver demo project
 
-
-
+# Helloword 
 
 ### Build
 
 Follow [this](https://github.com/pylover/esp8266-env) instruction 
 to setup your environment.
 
+```bash
+cd esp8266-env
+source activate.sh
+cd ..
+
+cd $DEST 
+bash gen_misc.sh
+```
+
+Or use predefined make macros:
 
 ```bash
-cd myenv
-source activate.sh
-
-git clone --recursive git@github.com:pylover/esp8266-httpserver-demo.git demo
-cd demo
-
 make clean
 make assets_map6user1
 make flash_map6user1 
 
 ```
 
-Or:
-
-```bash
-./gen_misc.sh
-```
