@@ -331,3 +331,5 @@ fotamap2: map2user2 rebootfota
 	-echo
 
 
+.PHONY: fota
+fota: fotamap6

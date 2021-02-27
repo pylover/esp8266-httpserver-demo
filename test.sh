@@ -37,8 +37,8 @@ function md5 () {
   md5sum -b | cut -c -32 
 }
 
-assert-eq "UNS Resolve" ${ADDR} `uns resolve ${NAME}`
-assert-eq "Small Binary response" \
+assert-eq "UNS resolve" ${ADDR} `uns resolve ${NAME}`
+assert-eq "Small binary response" \
   `md5 < assets/favicon-16x16.png` \
   `uns h get home.nodemcu/favicon.ico | md5`
 
@@ -46,7 +46,14 @@ assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
   "$(uns h post home.nodemcu/urlencoded foo=bar baz=qux)"
 
+
+tmp=$(tempfile)
+echo -e "bar" > ${tmp}
+assert-eq "Small multipart form" \
+  "foo=bar " \
+  "$(uns h upload home.nodemcu/multipart @foo=${tmp})"
+rm ${tmp}
+
 # TODO:
-# - URL encoded
-# - MULTIPART
+# - MULTIPART BIG
 # - Stream
