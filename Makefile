@@ -80,12 +80,12 @@ LINKFLAGS_eagle.app.v6 = \
 	-lupgrade\
 	-ldriver \
 	-lhal					\
-	$(DEP_LIBS_eagle.app.v6)					\
+	$(DEP_LIBS_eagle.app.v6)	\
 	-Wl,--end-group
 
+#	-lmbedtls	\
 #	-ljson	\
 #	-lsmartconfig \
-#	-lmbedtls	\
 #	-lpwm	\
 	
 DEPENDS_eagle.app.v6 = \
@@ -296,6 +296,13 @@ flash_map6user1: map6user1
 		0x3fb000 $(SDK_PATH)/bin/blank.bin \
 		0x3fe000 $(SDK_PATH)/bin/blank.bin 
 
+
+.PHONY: flash_map6user2
+flash_map6user2: map6user2
+	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
+		0x101000  $(BINDIR)/upgrade/user2.4096.new.6.bin 
+
+
 .PHONY: cleanup_map6user1_params
 cleanup_map6user1_params:
 	$(ESPTOOL_WRITE) --flash_size 4MB-c1  \
@@ -318,7 +325,7 @@ rebootfota:
 
 .PHONY: fotamap6
 fotamap6: map6user2 rebootfota
-	@sleep 3
+	@sleep 4
 	-curl -F firmware=@"$(BINDIR)/upgrade/user2.4096.new.6.bin" \
 		`uns resolve --short $(HOST)`/firmware
 	-echo
@@ -330,6 +337,9 @@ fotamap2: map2user2 rebootfota
 		`uns resolve --short $(HOST)`/firmware
 	-echo
 
-
 .PHONY: fota
 fota: fotamap6
+
+.PHONY: test
+test:
+	./test.sh

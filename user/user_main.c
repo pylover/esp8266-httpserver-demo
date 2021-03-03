@@ -66,7 +66,7 @@ void boothello() {
     status_update(700, 700, INFINITE, NULL);
 
     /* Web UI */
-	webadmin_start(&params);
+	webadmin_start();
 
 }
 

@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+
 ADDR=192.168.8.162
 NAME="home.nodemcu"
 
@@ -37,22 +39,35 @@ function md5 () {
   md5sum -b | cut -c -32 
 }
 
-assert-eq "UNS resolve" ${ADDR} `uns resolve ${NAME}`
+assert-eq "UNS resolve" ${ADDR} `uns resolve --force ${NAME}`
 assert-eq "Small binary response" \
   `md5 < assets/favicon-16x16.png` \
-  `uns h get home.nodemcu/favicon.ico | md5`
+  `uns http get home.nodemcu/favicon.ico | md5`
 
 assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
-  "$(uns h post home.nodemcu/urlencoded foo=bar baz=qux)"
+  "$(uns http post home.nodemcu/urlencoded foo=bar baz=qux)"
 
 
+# Multipart, single field
 tmp=$(tempfile)
 echo -e "bar" > ${tmp}
-assert-eq "Small multipart form" \
+assert-eq "Small multipart form, single field" \
   "foo=bar " \
-  "$(uns h upload home.nodemcu/multipart @foo=${tmp})"
+  "$(uns http upload home.nodemcu/multipart @foo=${tmp})"
 rm ${tmp}
+
+
+# Multipart, multiple fields
+tmpbar=$(tempfile)
+tmpbaz=$(tempfile)
+echo -e "bar" > ${tmpbar}
+echo -e "baz" > ${tmpbaz}
+assert-eq "Small multipart form, multipart fields" \
+  "foo=bar qux=baz " \
+  "$(uns http upload home.nodemcu/multipart @foo=${tmpbar} @qux=${tmpbaz})"
+rm ${tmpbar} ${tmpbaz}
+
 
 # TODO:
 # - MULTIPART BIG

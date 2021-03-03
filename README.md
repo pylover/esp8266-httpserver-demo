@@ -24,3 +24,8 @@ make flash_map6user1
 
 ```
 
+### Tests
+
+```bash
+make test
+```
