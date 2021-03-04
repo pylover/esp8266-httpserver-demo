@@ -51,6 +51,15 @@ void wifi_connect_cb(uint8_t status) {
     }
 }
 
+//static ICACHE_FLASH_ATTR
+//void startweb() {
+//	webadmin_start();
+//}
+//static ICACHE_FLASH_ATTR
+//void stopweb() {
+//	webadmin_stop();
+//    status_update(500, 500, 10, startweb);
+//}
 
 ICACHE_FLASH_ATTR
 void boothello() {
@@ -63,7 +72,8 @@ void boothello() {
             params.name
         );
     }
-    status_update(700, 700, INFINITE, NULL);
+    status_update(1000, 1000, INFINITE, NULL);
+    //status_update(1000, 1000, 10, stopweb);
 
     /* Web UI */
 	webadmin_start();

@@ -10,3 +10,6 @@
 [submodule "http"]
 	path = http
 	url = git@github.com:pylover/esp8266-httpclient.git
+[submodule "ringbuffer"]
+	path = ringbuffer
+	url = git@github.com:pylover/ringbuffer.git
