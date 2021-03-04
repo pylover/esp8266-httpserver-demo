@@ -28,7 +28,6 @@ SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 SUBDIRS=    \
 	user \
 	httpd \
-	http \
 	uns 
 
 endif # } PDIR
@@ -56,7 +55,6 @@ endif
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a \
 	httpd/libhttpd.a \
-	http/libhttp.a \
 	uns/libuns.a
 
 LINKFLAGS_eagle.app.v6 = \
@@ -132,7 +130,6 @@ DDEFINES +=				\
 INCLUDES := $(INCLUDES) \
 	-I $(PDIR)include \
 	-I $(PDIR)/httpd/include \
-	-I $(PDIR)/http/include \
 	-I $(PDIR)/uns/include 
 
 PDIR = $(SDK_PATH)/
