@@ -12,14 +12,6 @@
 #include <mem.h>
 
 
-//#define FAVICON_SIZE    495
-
-//#if SPI_SIZE_MAP == 2
-//#define FAVICON_FLASH_SECTOR    0x77    
-//#elif SPI_SIZE_MAP == 6
-//#define FAVICON_FLASH_SECTOR    0x200    
-//#endif
-
 
 //static Params *params;
 //static char buff[64];
@@ -135,49 +127,69 @@
 //}
 //
 //
-//static ICACHE_FLASH_ATTR
-//void webadmin_favicon(struct httpd_request *req, char *body, uint32_t len, 
-//        uint32_t more) {
-//    
-//    char buffer[4 * 124];
-//    int result = spi_flash_read(
-//            FAVICON_FLASH_SECTOR * SPI_FLASH_SEC_SIZE,
-//            (uint32_t*) buffer,
-//            4 * 124
-//        );
-//    if (result != SPI_FLASH_RESULT_OK) {
-//        os_printf("SPI Flash write failed: %d\r\n", result);
-//        httpd_response_notok(req, HTTPSTATUS_SERVERERROR);
-//        return;
-//    }
-//    httpd_response(req, HTTPSTATUS_OK, HTTPHEADER_CONTENTTYPE_ICON, buffer, 
-//            FAVICON_SIZE, NULL, 0);
-//}
+static ICACHE_FLASH_ATTR
+err_t demo_favicon(struct httpd_session *s) {
+    #define FAVICON_SIZE    495
+
+    #if SPI_SIZE_MAP == 2
+    #define FAVICON_FLASH_SECTOR    0x77    
+    #elif SPI_SIZE_MAP == 6
+    #define FAVICON_FLASH_SECTOR    0x200    
+    #endif
+   
+    char buffer[4 * 124];
+    int result = spi_flash_read(
+            FAVICON_FLASH_SECTOR * SPI_FLASH_SEC_SIZE,
+            (uint32_t*) buffer,
+            4 * 124
+        );
+    if (result != SPI_FLASH_RESULT_OK) {
+        os_printf("SPI Flash write failed: %d\r\n", result);
+        httpd_response_internalservererror(s);
+        return;
+    }
+    return httpd_response(s, HTTPSTATUS_OK, NULL, 0, HTTPHEADER_CONTENTTYPE_ICON, 
+            buffer, FAVICON_SIZE);
+}
 
 
-//static ICACHE_FLASH_ATTR
-//void webadmin_index(struct httpd_request *req, char *body, 
-//        uint32_t body_length, uint32_t more) {
-//    char buffer[64];
-//    int len = os_sprintf(buffer, "Index");
-//    httpd_response_text(req, HTTPSTATUS_OK, buffer, len);
-//}
+static ICACHE_FLASH_ATTR
+err_t demo_headersecho(struct httpd_session *s) {
+    return httpd_response(s, HTTPSTATUS_OK, s->request.headers, 
+            s->request.headerscount, NULL,
+            NULL, 0, false);
+    //char buffer[64];
+    //for (i = 0; i < s->request.headerscount; i++) {
+    //}
+    //return httpd_response_text(s, HTTPSTATUS_OK, buffer, len);
+}
 
 
-//static struct httproute routes[] = {
+
+static ICACHE_FLASH_ATTR
+err_t demo_index(struct httpd_session *s) {
+    char buffer[64];
+    int len = os_sprintf(buffer, "Index");
+    DEBUG("demo index"CR);
+    return httpd_response_text(s, HTTPSTATUS_OK, buffer, len);
+}
+
+
+static struct httpd_route routes[] = {
 //    {"FOTA",     "/",                app_reboot                      },
 //    {"UPLOAD",   "/multipart",       webadmin_small_multipart        },
 //    {"POST",     "/urlencoded",      webadmin_urlencoded             },
-//    {"GET",      "/favicon.ico",     webadmin_favicon                },
-//    {"GET",      "/",                webadmin_index                  },
-//    { NULL }
-//};
+    {"ECHO",     "/headers",         demo_headersecho            },
+    {"GET",      "/favicon.ico",     demo_favicon                },
+    {"GET",      "/",                demo_index                  },
+    { NULL }
+};
 
 
 ICACHE_FLASH_ATTR
 int webadmin_start() {
     err_t err;
-    err = httpd_init();
+    err = httpd_init(routes);
     if (err) {
         ERROR("Cannot init httpd: %d\r\n", err);
     }
