@@ -14,8 +14,8 @@
 
 
 //static Params *params;
-//static char buff[64];
-//static uint32_t bufflen = 0;
+static char buff[128];
+static uint32_t bufflen = 0;
 //
 //
 //void reboot_fotamode() {
@@ -108,25 +108,40 @@
 //
 //
 //
+static ICACHE_FLASH_ATTR
+void _form_cb(struct httpd_session *s, const char *field, 
+        const char *value) {
+    bufflen += os_sprintf(buff + bufflen, "%s=%s ", field, value);
+}
+
 //static ICACHE_FLASH_ATTR
-//void _fieldcb(const char *field, const char *value) {
-//    bufflen += os_sprintf(buff + bufflen, "%s=%s ", field, value);
-//}
-//
-//
-//static ICACHE_FLASH_ATTR
-//void webadmin_urlencoded(struct httpd_request *req, char *body, uint32_t len, 
-//        uint32_t more) {
+//err_t demo_urlencoded(struct httpd_session *s) {
+//    err_t err;
+//    uint32_t more = HTTPD_REQUESTBODY_REMAINING(s);
+//    DEBUG("more: %u"CR, more);
 //    if (more) {
-//        return;
+//        return HTTPD_OK;
 //    }
-//    body[len] = 0;
-//    querystring_parse(body, _fieldcb);  
-//    httpd_response_text(req, HTTPSTATUS_OK, buff, bufflen);
+//    
+//    DEBUG("Starting response: %u"CR, more);
+//    err = httpd_form_urlencoded_parse(s, _urlencoded_cb);
+//    if (err) {
+//        return err;
+//    }
+//    err = httpd_response_text(req, HTTPSTATUS_OK, buff, bufflen);
 //    bufflen = 0;
+//    return err;
 //}
-//
-//
+
+static ICACHE_FLASH_ATTR
+err_t demo_querystring(struct httpd_session *s) {
+    err_t err;
+    bufflen = 0;
+    httpd_querystring_parse(s, _form_cb);
+    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+}
+
+
 static ICACHE_FLASH_ATTR
 err_t demo_favicon(struct httpd_session *s) {
     #define FAVICON_SIZE    495
@@ -148,37 +163,30 @@ err_t demo_favicon(struct httpd_session *s) {
         httpd_response_internalservererror(s);
         return;
     }
-    return httpd_response(s, HTTPSTATUS_OK, NULL, 0, HTTPHEADER_CONTENTTYPE_ICON, 
-            buffer, FAVICON_SIZE);
+    return httpd_response(s, HTTPSTATUS_OK, NULL, 0, 
+            HTTPHEADER_CONTENTTYPE_ICON, buffer, FAVICON_SIZE);
 }
 
 
 static ICACHE_FLASH_ATTR
 err_t demo_headersecho(struct httpd_session *s) {
     return httpd_response(s, HTTPSTATUS_OK, s->request.headers, 
-            s->request.headerscount, NULL,
-            NULL, 0, false);
-    //char buffer[64];
-    //for (i = 0; i < s->request.headerscount; i++) {
-    //}
-    //return httpd_response_text(s, HTTPSTATUS_OK, buffer, len);
+            s->request.headerscount, NULL, NULL, 0, false);
 }
 
 
 
 static ICACHE_FLASH_ATTR
 err_t demo_index(struct httpd_session *s) {
-    char buffer[64];
-    int len = os_sprintf(buffer, "Index");
-    DEBUG("demo index"CR);
-    return httpd_response_text(s, HTTPSTATUS_OK, buffer, len);
+    return httpd_response_text(s, HTTPSTATUS_OK, "Index", 5);
 }
 
 
 static struct httpd_route routes[] = {
 //    {"FOTA",     "/",                app_reboot                      },
 //    {"UPLOAD",   "/multipart",       webadmin_small_multipart        },
-//    {"POST",     "/urlencoded",      webadmin_urlencoded             },
+//    {"POST",     "/urlencoded",      demo_urlencoded             },
+    {"ECHO",     "/queries",         demo_querystring            },
     {"ECHO",     "/headers",         demo_headersecho            },
     {"GET",      "/favicon.ico",     demo_favicon                },
     {"GET",      "/",                demo_index                  },

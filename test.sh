@@ -24,6 +24,12 @@ assert-eq "Small binary response" \
   `md5 < assets/favicon-16x16.png` \
   `uns http get ${NAME}/favicon.ico | md5`
 
+
+assert-eq "Querystring" \
+  "foo=bar baz=qux " \
+  "$(uns http echo "${NAME}/queries?foo=bar&baz=qux")"
+
+
 exit 0
 
 assert-eq "URL encoded form" \
