@@ -114,24 +114,19 @@ void _form_cb(struct httpd_session *s, const char *field,
     bufflen += os_sprintf(buff + bufflen, "%s=%s ", field, value);
 }
 
-//static ICACHE_FLASH_ATTR
-//err_t demo_urlencoded(struct httpd_session *s) {
-//    err_t err;
-//    uint32_t more = HTTPD_REQUESTBODY_REMAINING(s);
-//    DEBUG("more: %u"CR, more);
-//    if (more) {
-//        return HTTPD_OK;
-//    }
-//    
-//    DEBUG("Starting response: %u"CR, more);
-//    err = httpd_form_urlencoded_parse(s, _urlencoded_cb);
-//    if (err) {
-//        return err;
-//    }
-//    err = httpd_response_text(req, HTTPSTATUS_OK, buff, bufflen);
-//    bufflen = 0;
-//    return err;
-//}
+
+static ICACHE_FLASH_ATTR
+err_t demo_urlencoded(struct httpd_session *s) {
+    err_t err;
+    uint32_t more = HTTPD_REQUESTBODY_REMAINING(s);
+    if (more) {
+        return HTTPD_OK;
+    }
+    
+    bufflen = 0;
+    httpd_form_urlencoded_parse(s, _form_cb);
+    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+}
 
 static ICACHE_FLASH_ATTR
 err_t demo_querystring(struct httpd_session *s) {
@@ -185,7 +180,7 @@ err_t demo_index(struct httpd_session *s) {
 static struct httpd_route routes[] = {
 //    {"FOTA",     "/",                app_reboot                      },
 //    {"UPLOAD",   "/multipart",       webadmin_small_multipart        },
-//    {"POST",     "/urlencoded",      demo_urlencoded             },
+    {"ECHO",     "/urlencodedforms", demo_urlencoded             },
     {"ECHO",     "/queries",         demo_querystring            },
     {"ECHO",     "/headers",         demo_headersecho            },
     {"GET",      "/favicon.ico",     demo_favicon                },

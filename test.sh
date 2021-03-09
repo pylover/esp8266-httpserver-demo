@@ -30,12 +30,13 @@ assert-eq "Querystring" \
   "$(uns http echo "${NAME}/queries?foo=bar&baz=qux")"
 
 
-exit 0
 
 assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
-  "$(uns http post ${NAME}/urlencoded foo=bar baz=qux)"
+  "$(uns http ECHO ${NAME}/urlencodedforms foo=bar baz=qux)"
 
+
+exit 0
 
 # Multipart, single field
 tmp=$(tempfile)
