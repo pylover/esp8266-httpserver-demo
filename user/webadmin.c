@@ -29,7 +29,7 @@ err_t reboot_fotamode(struct httpd_session *s) {
 }
 
 
-static
+static ICACHE_FLASH_ATTR
 httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk, 
         bool finish) {
     //os_printf(".");
@@ -49,11 +49,46 @@ httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk,
 }
 
 
-ICACHE_FLASH_ATTR
+static ICACHE_FLASH_ATTR
 httpd_err_t demo_multipart(struct httpd_session *s) {
     return httpd_form_multipart_parse(s, _multipart_cb);
 }
 
+
+static ICACHE_FLASH_ATTR
+httpd_err_t demo_download(struct httpd_session *s) {
+    httpd_err_t err = httpd_response_start(s, HTTPSTATUS_OK, NULL, 0, 
+            HTTPHEADER_CONTENTTYPE_TEXT, 0, HTTPD_FLAG_STREAM);
+    
+    if (err) {
+        return err;
+    }
+    
+    CHK("Chunk #1");
+    err = session_send(s, "Part 1"CR, 8); 
+    if (err) {
+        return err;
+    }
+    CHK("Chunk #2");
+    err = session_send(s, "Part 2"CR, 8); 
+    if (err) {
+        return err;
+    }
+    CHK("Chunk #3");
+    err = session_send(s, "Part 3"CR, 8); 
+    if (err) {
+        return err;
+    }
+    CHK("Chunk #4");
+    err = session_send(s, "Part 4"CR, 8); 
+    if (err) {
+        return err;
+    }
+    
+    CHK("finalize");
+    httpd_response_finalize(s, HTTPD_FLAG_CLOSE);
+    return HTTPD_OK;
+}
 
 static ICACHE_FLASH_ATTR
 void _form_cb(struct httpd_session *s, const char *field, 
@@ -126,6 +161,7 @@ err_t demo_index(struct httpd_session *s) {
 
 
 static struct httpd_route routes[] = {
+    {"DOWNLOAD",   "/",                    demo_download    },
     {"UPLOAD",     "/multipartforms",      demo_multipart   },
     {"ECHO",       "/urlencodedforms",     demo_urlencoded  },
     {"ECHO",       "/queries",             demo_querystring },
