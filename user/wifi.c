@@ -1,8 +1,8 @@
 #include "wifi.h"
-#include "debug.h"
 #include "user_config.h"
 #include "params.h"
 #include "uns.h"
+#include "common.h"
 
 #include <user_interface.h>
 #include <osapi.h>

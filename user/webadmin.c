@@ -1,8 +1,6 @@
 #include "params.h"
-//#include "multipart.h"
-//#include "querystring.h"
 #include "status.h"
-#include "debug.h"
+//#include "debug.h"
 #include "webadmin.h"
 #include "httpd.h"
 #include "uns.h"
@@ -13,101 +11,56 @@
 
 
 
-//static Params *params;
 static char buff[128];
 static uint32_t bufflen = 0;
-//
-//
-//void reboot_fotamode() {
-//    system_upgrade_flag_set(UPGRADE_FLAG_FINISH);
-//    system_upgrade_reboot();
-//}
-//
-//
-//static ICACHE_FLASH_ATTR
-//void app_reboot(struct httpd_request *req, char *body, uint32_t body_length, 
-//        uint32_t more) {
-//    char buffer[256];
-//    uint8_t image = system_upgrade_userbin_check();
-//    int len = os_sprintf(buffer, "Rebooting to %s mode...\r\n",
-//        image == UPGRADE_FW_BIN1? "app": "FOTA");
-//    httpd_response_text(req, HTTPSTATUS_OK, buffer, len);
-//    status_update(500, 500, 1, reboot_fotamode);
-//}
+
+
+void reboot_fotamode_cb() {
+    system_upgrade_flag_set(UPGRADE_FLAG_FINISH);
+    system_upgrade_reboot();
+}
+
+
+static ICACHE_FLASH_ATTR
+err_t reboot_fotamode(struct httpd_session *s) {
+    uint8_t image = system_upgrade_userbin_check();
+    bufflen = os_sprintf(buff, "Rebooting to %s mode...\r\n",
+        image == UPGRADE_FW_BIN1? "APP": "FOTA");
+    status_update(500, 500, 1, reboot_fotamode_cb);
+    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+}
 
 
 /* Under Test */
-//
-//#define BUFFSIZE	2048
-//
-//static Multipart mp;
-//static char rbbuff[BUFFSIZE];
-//static RingBuffer rb = {BUFFSIZE, 0, 0, rbbuff};
-//
-//
-//static
-//void _small_multipartcb(MultipartField *f, char *body, Size len, bool last) {
-//    char b[128];
-//    os_snprintf(b, len, "%s", body);
-//    bufflen += os_sprintf(buff + bufflen, "%s=%s ", f->name, b);
-//}
-//
-//
-//ICACHE_FLASH_ATTR
-//void webadmin_small_multipart(struct httpd_request *req, char *body, 
-//        uint32_t body_length, uint32_t more) {
-//
-//	int err;
-//    //os_printf("L: %d, more: %d\n", body_length, more);
-//
-//	if (body_length <= 0) {
-//		return;
-//	}
-//	
-//	if (mp.status == MP_IDLE) {
-//		err = mp_init(&mp, req->contenttype, _small_multipartcb);
-//		if (err != MP_OK) {
-//			os_printf("Cannot init multipart: %d\r\n", err);
-//			goto badrequest;
-//		}
-//        bufflen = 0;
-//		rb_reset(&rb);
-//        status_update(1000, 1000, INFINITE, NULL);
-//	}
-//	
-//	espconn_recv_hold(req->conn);
-//	if ((err = rb_safepush(&rb, body, body_length)) == RB_FULL) {
-//		goto badrequest;
-//	}
-//    
-//    err = mp_feedbybuffer(&mp, &rb);
-//	espconn_recv_unhold(req->conn);
-//	switch (err) {
-//		case MP_DONE:
-//			goto done;
-//
-//		case MP_MORE:
-//			return;
-//
-//		default:
-//			goto badrequest;
-//	}
-//
-//done:
-//	mp_close(&mp);
-//	httpd_response_text(req, HTTPSTATUS_OK, buff, bufflen);
-//    bufflen = 0;
-//	return;
-//
-//badrequest:
-//    bufflen = 0;
-//	mp_close(&mp);
-//    status_update(100, 100, 3, NULL);
-//	httpd_response_notok(req, HTTPSTATUS_BADREQUEST);
-//}
-//
-//
-//
+
+
+#define L   512
+static
+httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk, 
+        bool finish) {
+    // m->field
+    // m->filename
+    // httpd_multipart_read(m, d, l)
+    char tmp[L + 1];
+    size16_t len = httpd_multipart_read(m, tmp, L);
+    tmp[len] = 0;
+    DEBUG("lastchunk: %d finish: %d %s %s %s %s", lastchunk, finish, 
+            m->field, m->filename, m->contenttype, tmp);
+    if (lastchunk) {
+    }
+    if (finish) {
+        return httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
+    }
+    return HTTPD_OK;
+}
+
+
+ICACHE_FLASH_ATTR
+httpd_err_t demo_multipart(struct httpd_session *s) {
+    return httpd_form_multipart_parse(s, _multipart_cb);
+}
+
+
 static ICACHE_FLASH_ATTR
 void _form_cb(struct httpd_session *s, const char *field, 
         const char *value) {
@@ -178,13 +131,13 @@ err_t demo_index(struct httpd_session *s) {
 
 
 static struct httpd_route routes[] = {
-//    {"FOTA",     "/",                app_reboot                      },
-//    {"UPLOAD",   "/multipart",       webadmin_small_multipart        },
-    {"ECHO",     "/urlencodedforms", demo_urlencoded             },
-    {"ECHO",     "/queries",         demo_querystring            },
-    {"ECHO",     "/headers",         demo_headersecho            },
-    {"GET",      "/favicon.ico",     demo_favicon                },
-    {"GET",      "/",                demo_index                  },
+    {"UPLOAD",     "/multipartforms",      demo_multipart   },
+    {"ECHO",       "/urlencodedforms",     demo_urlencoded  },
+    {"ECHO",       "/queries",             demo_querystring },
+    {"ECHO",       "/headers",             demo_headersecho },
+    {"GET",        "/favicon.ico",         demo_favicon     },
+    {"GET",        "/",                    demo_index       },
+    {"FOTA",       "/",                    reboot_fotamode  },
     { NULL }
 };
 

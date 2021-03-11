@@ -1,9 +1,9 @@
 // Internal 
+#include "common.h"
 #include "user_config.h"
 #include "partition.h"
 #include "wifi.h"
 #include "params.h" 
-#include "debug.h"
 #include "status.h"
 #include "uns.h"
 #include "interrupt.h"
@@ -119,7 +119,7 @@ void user_pre_init(void) {
     if(!system_partition_table_regist(at_partition_table, 
 				sizeof(at_partition_table)/sizeof(at_partition_table[0]),
 				SPI_FLASH_SIZE_MAP)) {
-		FATAL("system_partition_table_regist fail\r\n");
+		ERROR("system_partition_table_regist fail");
 		while(1);
 	}
 }

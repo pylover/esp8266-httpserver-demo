@@ -1,5 +1,4 @@
 #include "status.h"
-#include "debug.h"
 
 #include <osapi.h>
 #include <gpio.h>

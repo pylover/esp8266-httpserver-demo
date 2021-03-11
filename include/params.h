@@ -1,7 +1,6 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 
-#include "debug.h"
 #include "partition.h"
 
 #include <c_types.h>

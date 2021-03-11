@@ -1,6 +1,7 @@
 #include "params.h"
 
 #include <user_interface.h>
+#include <osapi.h>
 
 
 ICACHE_FLASH_ATTR 
