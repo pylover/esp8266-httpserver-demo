@@ -34,20 +34,19 @@ err_t reboot_fotamode(struct httpd_session *s) {
 /* Under Test */
 
 
-#define L   512
+#define L   1024
 static
 httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk, 
         bool finish) {
-    // m->field
-    // m->filename
-    // httpd_multipart_read(m, d, l)
     char tmp[L + 1];
-    size16_t len = httpd_multipart_read(m, tmp, L);
-    tmp[len] = 0;
-    DEBUG("lastchunk: %d finish: %d %s %s %s %s", lastchunk, finish, 
-            m->field, m->filename, m->contenttype, tmp);
-    if (lastchunk) {
-    }
+    size32_t len  = 0;
+    size16_t t;
+    do {
+        t = httpd_multipart_read(m, tmp, L);
+        len += t;
+    } while(t > 0);
+    DEBUG("lastchunk: %d finish: %d len: %u %s %s %s", lastchunk, finish, len,
+            m->field, m->filename, m->contenttype);
     if (finish) {
         return httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
     }
