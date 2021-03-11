@@ -1,6 +1,5 @@
 #include "params.h"
 #include "status.h"
-//#include "debug.h"
 #include "webadmin.h"
 #include "httpd.h"
 #include "uns.h"
@@ -8,7 +7,6 @@
 #include <upgrade.h>
 #include <osapi.h>
 #include <mem.h>
-
 
 
 static char buff[128];
@@ -31,22 +29,19 @@ err_t reboot_fotamode(struct httpd_session *s) {
 }
 
 
-/* Under Test */
-
-
-#define L   1024
 static
 httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk, 
         bool finish) {
-    char tmp[L + 1];
-    size32_t len  = 0;
+    //os_printf(".");
+    char tmp[HTTPD_MP_BUFFSIZE];
+    size16_t len = 0;
     size16_t t;
     do {
-        t = httpd_multipart_read(m, tmp, L);
+        t = httpd_multipart_read(m, tmp, HTTPD_MP_BUFFSIZE);
         len += t;
     } while(t > 0);
-    DEBUG("lastchunk: %d finish: %d len: %u %s %s %s", lastchunk, finish, len,
-            m->field, m->filename, m->contenttype);
+    //DEBUG("l: %d f: %d len: %u %s %s %s", lastchunk, finish, len,
+    //        m->field, m->filename, m->contenttype);
     if (finish) {
         return httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
     }
@@ -111,7 +106,8 @@ err_t demo_favicon(struct httpd_session *s) {
         return;
     }
     return httpd_response(s, HTTPSTATUS_OK, NULL, 0, 
-            HTTPHEADER_CONTENTTYPE_ICON, buffer, FAVICON_SIZE);
+            HTTPHEADER_CONTENTTYPE_ICON, buffer, FAVICON_SIZE, 
+            HTTPD_FLAG_NONE);
 }
 
 

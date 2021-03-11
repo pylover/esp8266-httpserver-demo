@@ -10,9 +10,11 @@ assert-eq "Simple GET" \
   'Index' \
   `uns http get ${NAME}`
 
-assert-eq "HTTP Headers" "Server: esp8266-HTTPd/2.0.0
-Content-Length: 0
+assert-eq "HTTP Headers" "\
+200 OK HTTP/1.1
+Server: esp8266-HTTPd/2.0.0
 Connection: keep-alive
+Content-Length: 0
 Host: 192.168.8.162
 User-Agent: python-requests/2.22.0
 Accept-Encoding: gzip, deflate
