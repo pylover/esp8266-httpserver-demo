@@ -3,6 +3,8 @@
 #include "webadmin.h"
 #include "httpd.h"
 #include "uns.h"
+#include "tcpd.h"
+#include "session.h"
 
 #include <upgrade.h>
 #include <osapi.h>
@@ -29,22 +31,62 @@ err_t reboot_fotamode(struct httpd_session *s) {
 }
 
 
+static struct httpd_session *downloader;
+static struct httpd_multipart *uploader;
+
+
 static ICACHE_FLASH_ATTR
-httpd_err_t _multipart_cb(struct httpd_multipart *m, bool lastchunk, 
-        bool finish) {
-    //os_printf(".");
-    char tmp[HTTPD_MP_BUFFSIZE];
-    size16_t len = 0;
-    size16_t t;
-    do {
-        t = httpd_multipart_read(m, tmp, HTTPD_MP_BUFFSIZE);
-        len += t;
-    } while(t > 0);
-    //DEBUG("l: %d f: %d len: %u %s %s %s", lastchunk, finish, len,
-    //        m->field, m->filename, m->contenttype);
-    if (finish) {
-        return httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
+httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data, size16_t len,
+        bool lastchunk, bool finish) {
+    httpd_err_t err;
+    
+    if (uploader == NULL) {
+        uploader = m;
     }
+    CHK("CB: %dB l: %d f: %d", len, lastchunk, finish);
+    
+    if (len) {
+        err = session_send(downloader, data, len);
+        if (err) {
+            return err;
+        }
+    }
+    if (finish){
+        CHK("Response uploader");
+        err = httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
+        if(err) {
+            return err;
+        }
+        if (downloader) {
+            CHK("Finalize downloade");
+            httpd_response_finalize(downloader, HTTPD_FLAG_CLOSE);
+        }
+    }
+    return HTTPD_OK;
+}
+
+
+static ICACHE_FLASH_ATTR
+httpd_err_t demo_download_chunk_sent(struct httpd_session *s) {
+    size16_t available = session_resp_len(s);
+    //CHK("SENT CB: avail: %d", available);
+    if ((uploader != NULL) && (!available)) {
+        if(!HTTPD_SCHEDULE(HTTPD_SIG_RECVUNHOLD, uploader->session)) {
+            return HTTPD_ERR_TASKQ_FULL;
+        }
+    }
+    return HTTPD_OK;
+}
+static ICACHE_FLASH_ATTR
+httpd_err_t demo_download(struct httpd_session *s) {
+    s->sentcb = demo_download_chunk_sent;
+    httpd_err_t err = httpd_response_start(s, HTTPSTATUS_OK, NULL, 0, 
+            HTTPHEADER_CONTENTTYPE_BINARY, 0, HTTPD_FLAG_STREAM);
+    if (err) {
+        return err;
+    }
+    
+    downloader = s;
     return HTTPD_OK;
 }
 
@@ -54,41 +96,6 @@ httpd_err_t demo_multipart(struct httpd_session *s) {
     return httpd_form_multipart_parse(s, _multipart_cb);
 }
 
-
-static ICACHE_FLASH_ATTR
-httpd_err_t demo_download(struct httpd_session *s) {
-    httpd_err_t err = httpd_response_start(s, HTTPSTATUS_OK, NULL, 0, 
-            HTTPHEADER_CONTENTTYPE_TEXT, 0, HTTPD_FLAG_STREAM);
-    
-    if (err) {
-        return err;
-    }
-    
-    CHK("Chunk #1");
-    err = session_send(s, "Part 1"CR, 8); 
-    if (err) {
-        return err;
-    }
-    CHK("Chunk #2");
-    err = session_send(s, "Part 2"CR, 8); 
-    if (err) {
-        return err;
-    }
-    CHK("Chunk #3");
-    err = session_send(s, "Part 3"CR, 8); 
-    if (err) {
-        return err;
-    }
-    CHK("Chunk #4");
-    err = session_send(s, "Part 4"CR, 8); 
-    if (err) {
-        return err;
-    }
-    
-    CHK("finalize");
-    httpd_response_finalize(s, HTTPD_FLAG_CLOSE);
-    return HTTPD_OK;
-}
 
 static ICACHE_FLASH_ATTR
 void _form_cb(struct httpd_session *s, const char *field, 
