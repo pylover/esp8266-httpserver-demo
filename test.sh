@@ -24,7 +24,7 @@ Accept: */* -H'foo: bar'" \
 
 assert-eq "Small binary response" \
   `md5 < assets/favicon-16x16.png` \
-  `uns http get ${NAME}/favicon.ico | md5`
+  `uns http -b get ${NAME}/favicon.ico | md5`
 
 
 assert-eq "Querystring" \
@@ -32,11 +32,27 @@ assert-eq "Querystring" \
   "$(uns http echo "${NAME}/queries?foo=bar&baz=qux")"
 
 
-
 assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
   "$(uns http ECHO ${NAME}/urlencodedforms foo=bar baz=qux)"
 
+
+# Multipart, streaming
+tmp1=$(tempfile)
+tmp2=$(tempfile)
+dd if=/dev/urandom bs=1 count=1000000 of=${tmp1} >> /dev/null 2>&1
+
+uns http -b download ${NAME}/multipartforms > ${tmp2} & \
+  assert-eq "Multipart streaming" \
+  "$(printf 'Ok\r\n')" \
+  "$(uns http upload ${NAME}/multipartforms @foo=${tmp1})"
+
+assert-eq "HTTP Streaming" \
+  "$(cat $tmp1 | md5)" \
+  "$(cat $tmp2 | md5)"
+
+#rm ${tmp1}
+#rm ${tmp2}
 
 exit 0
 

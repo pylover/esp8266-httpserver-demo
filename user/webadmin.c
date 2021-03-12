@@ -40,12 +40,10 @@ httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data, size16_t len,
         bool lastchunk, bool finish) {
     httpd_err_t err;
     
-    if (uploader == NULL) {
-        uploader = m;
-    }
+    uploader = m;
     CHK("CB: %dB l: %d f: %d", len, lastchunk, finish);
     
-    if (len) {
+    if (downloader && len) {
         err = session_send(downloader, data, len);
         if (err) {
             return err;
@@ -57,8 +55,8 @@ httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data, size16_t len,
         if(err) {
             return err;
         }
-        if (downloader) {
-            CHK("Finalize downloade");
+        if (downloader != NULL) {
+            CHK("Finalize downloader");
             httpd_response_finalize(downloader, HTTPD_FLAG_CLOSE);
         }
     }
@@ -77,6 +75,7 @@ httpd_err_t demo_download_chunk_sent(struct httpd_session *s) {
     }
     return HTTPD_OK;
 }
+
 static ICACHE_FLASH_ATTR
 httpd_err_t demo_download(struct httpd_session *s) {
     s->sentcb = demo_download_chunk_sent;
@@ -168,7 +167,7 @@ err_t demo_index(struct httpd_session *s) {
 
 
 static struct httpd_route routes[] = {
-    {"DOWNLOAD",   "/",                    demo_download    },
+    {"DOWNLOAD",   "/multipartforms",      demo_download    },
     {"UPLOAD",     "/multipartforms",      demo_multipart   },
     {"ECHO",       "/urlencodedforms",     demo_urlencoded  },
     {"ECHO",       "/queries",             demo_querystring },
