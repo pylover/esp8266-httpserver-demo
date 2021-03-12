@@ -36,46 +36,46 @@ assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
   "$(uns http ECHO ${NAME}/urlencodedforms foo=bar baz=qux)"
 
+assert-eq "Streaming" \
+  "$(printf 'Foo\r\nBar\r\nBaz\r\nQux\r\n')" \
+  "$(uns http DOWNLOAD ${NAME})"
 
 # Multipart, streaming
 tmp1=$(tempfile)
 tmp2=$(tempfile)
-dd if=/dev/urandom bs=1 count=1000000 of=${tmp1} >> /dev/null 2>&1
+dd if=/dev/urandom bs=1 count=100000 of=${tmp1} >> /dev/null 2>&1
 
-uns http -b download ${NAME}/multipartforms > ${tmp2} & \
-  assert-eq "Multipart streaming" \
-  "$(printf 'Ok\r\n')" \
-  "$(uns http upload ${NAME}/multipartforms @foo=${tmp1})"
+uns http -b download ${NAME}/multipartstreams > ${tmp2} & \
+  uns http upload ${NAME}/multipartstreams @foo=${tmp1} > /dev/null
+assert-eq "Multipart streaming" "$(cat $tmp1 | md5)" "$(cat $tmp2 | md5)"
+rm ${tmp1}
+rm ${tmp2}
 
-assert-eq "HTTP Streaming" \
-  "$(cat $tmp1 | md5)" \
-  "$(cat $tmp2 | md5)"
-
-#rm ${tmp1}
-#rm ${tmp2}
-
-exit 0
 
 # Multipart, single field
 tmp=$(tempfile)
-echo -e "bar" > ${tmp}
+echo -n "bar" > ${tmp}
 assert-eq "Small multipart form, single field" \
   "foo=bar " \
-  "$(uns http upload ${NAME}/multipart @foo=${tmp})"
+  "$(uns http echo ${NAME}/multipartforms @foo=${tmp})"
 rm ${tmp}
 
 
 # Multipart, multiple fields
 tmpbar=$(tempfile)
 tmpbaz=$(tempfile)
-echo -e "bar" > ${tmpbar}
-echo -e "baz" > ${tmpbaz}
+echo -n "bar" > ${tmpbar}
+echo -n "baz" > ${tmpbaz}
 assert-eq "Small multipart form, multipart fields" \
   "foo=bar qux=baz " \
-  "$(uns http upload ${NAME}/multipart @foo=${tmpbar} @qux=${tmpbaz})"
+  "$(uns http echo ${NAME}/multipartforms @foo=${tmpbar} @qux=${tmpbaz})"
 rm ${tmpbar} ${tmpbaz}
 
-
-# TODO:
-# - MULTIPART BIG
-# - Stream
+echo -e "$LK"
+make map6user2 >> /dev/null
+echo -e "$C"
+binsize user/.output/eagle/debug/lib/libuser.a
+binsize httpd/.output/eagle/debug/lib/libhttpd.a
+binsize uns/.output/eagle/debug/lib/libuns.a 
+echo '--------------------------'
+binsize bin/upgrade/user2.4096.new.6.bin

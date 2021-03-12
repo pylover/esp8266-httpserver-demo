@@ -5,6 +5,7 @@
 #include "uns.h"
 #include "tcpd.h"
 #include "session.h"
+#include "datamodel.h"
 
 #include <upgrade.h>
 #include <osapi.h>
@@ -31,13 +32,42 @@ err_t reboot_fotamode(struct httpd_session *s) {
 }
 
 
+static ICACHE_FLASH_ATTR
+httpd_err_t demo_download(struct httpd_session *s) {
+    httpd_err_t err = httpd_response_start(s, HTTPSTATUS_OK, NULL, 0, 
+            HTTPHEADER_CONTENTTYPE_BINARY, 0, HTTPD_FLAG_STREAM);
+    if (err) {
+        return err;
+    }
+    
+    err = session_send(s, "Foo"CR, 5);
+    if (err) {
+        return err;
+    }
+    err = session_send(s, "Bar"CR, 5);
+    if (err) {
+        return err;
+    }
+    err = session_send(s, "Baz"CR, 5);
+    if (err) {
+        return err;
+    }
+    err = session_send(s, "Qux"CR, 5);
+    if (err) {
+        return err;
+    }
+    httpd_response_finalize(s, HTTPD_FLAG_CLOSE);
+    return HTTPD_OK;
+}
+
+
 static struct httpd_session *downloader;
 static struct httpd_multipart *uploader;
 
 
 static ICACHE_FLASH_ATTR
-httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data, size16_t len,
-        bool lastchunk, bool finish) {
+httpd_err_t _multipart_stream_cb(struct httpd_multipart *m, char *data, 
+        size16_t len, bool lastchunk, bool finish) {
     httpd_err_t err;
     
     uploader = m;
@@ -69,7 +99,8 @@ httpd_err_t demo_download_chunk_sent(struct httpd_session *s) {
     size16_t available = session_resp_len(s);
     //CHK("SENT CB: avail: %d", available);
     if ((uploader != NULL) && (!available)) {
-        if(!HTTPD_SCHEDULE(HTTPD_SIG_RECVUNHOLD, uploader->session)) {
+        if(!HTTPD_SCHEDULE(HTTPD_SIG_RECVUNHOLD, 
+                    (os_param_t) uploader->session)) {
             return HTTPD_ERR_TASKQ_FULL;
         }
     }
@@ -77,7 +108,7 @@ httpd_err_t demo_download_chunk_sent(struct httpd_session *s) {
 }
 
 static ICACHE_FLASH_ATTR
-httpd_err_t demo_download(struct httpd_session *s) {
+httpd_err_t demo_download_stream(struct httpd_session *s) {
     s->sentcb = demo_download_chunk_sent;
     httpd_err_t err = httpd_response_start(s, HTTPSTATUS_OK, NULL, 0, 
             HTTPHEADER_CONTENTTYPE_BINARY, 0, HTTPD_FLAG_STREAM);
@@ -91,7 +122,33 @@ httpd_err_t demo_download(struct httpd_session *s) {
 
 
 static ICACHE_FLASH_ATTR
+httpd_err_t demo_multipart_stream(struct httpd_session *s) {
+    return httpd_form_multipart_parse(s, _multipart_stream_cb);
+}
+
+
+static ICACHE_FLASH_ATTR
+httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data, 
+        size16_t len, bool lastchunk, bool finish) {
+    char tmp[HTTPD_MP_CHUNK];
+    if (finish) {
+        CHK("Finish");
+        return httpd_response_text(m->session, HTTPSTATUS_OK, buff, bufflen);
+    }
+
+    if (lastchunk) {
+        CHK("len: %d", len);
+        os_strncpy(tmp, data, len);
+        tmp[len] = 0;
+        bufflen += os_sprintf(buff + bufflen, "%s=%s ", m->field, tmp);
+    }
+    return HTTPD_OK;
+}
+
+
+static ICACHE_FLASH_ATTR
 httpd_err_t demo_multipart(struct httpd_session *s) {
+    bufflen = 0;
     return httpd_form_multipart_parse(s, _multipart_cb);
 }
 
@@ -167,14 +224,16 @@ err_t demo_index(struct httpd_session *s) {
 
 
 static struct httpd_route routes[] = {
-    {"DOWNLOAD",   "/multipartforms",      demo_download    },
-    {"UPLOAD",     "/multipartforms",      demo_multipart   },
-    {"ECHO",       "/urlencodedforms",     demo_urlencoded  },
-    {"ECHO",       "/queries",             demo_querystring },
-    {"ECHO",       "/headers",             demo_headersecho },
-    {"GET",        "/favicon.ico",         demo_favicon     },
-    {"GET",        "/",                    demo_index       },
-    {"FOTA",       "/",                    reboot_fotamode  },
+    {"DOWNLOAD",   "/multipartstreams",    demo_download_stream   },
+    {"UPLOAD",     "/multipartstreams",    demo_multipart_stream  },
+    {"ECHO",       "/multipartforms",      demo_multipart         },
+    {"ECHO",       "/urlencodedforms",     demo_urlencoded        },
+    {"ECHO",       "/queries",             demo_querystring       },
+    {"ECHO",       "/headers",             demo_headersecho       },
+    {"GET",        "/favicon.ico",         demo_favicon           },
+    {"DOWNLOAD",   "/",                    demo_download          },
+    {"GET",        "/",                    demo_index             },
+    {"FOTA",       "/",                    reboot_fotamode        },
     { NULL }
 };
 
