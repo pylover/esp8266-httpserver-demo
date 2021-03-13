@@ -27,6 +27,7 @@ GEN_BINS= eagle.app.v6.bin
 SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 SUBDIRS=    \
 	user \
+	ringbuffer \
 	httpd \
 	uns 
 
@@ -54,6 +55,7 @@ endif
 
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a \
+	ringbuffer/libringbuffer.a \
 	httpd/libhttpd.a \
 	uns/libuns.a
 
@@ -129,8 +131,10 @@ DDEFINES +=				\
 
 INCLUDES := $(INCLUDES) \
 	-I $(PDIR)include \
+	-I $(PDIR)/ringbuffer \
 	-I $(PDIR)/httpd/include \
-	-I $(PDIR)/uns/include 
+	-I $(PDIR)/uns/include \
+	-I $(PDIR)/debug
 
 PDIR = $(SDK_PATH)/
 sinclude $(SDK_PATH)/Makefile

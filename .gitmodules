@@ -4,3 +4,9 @@
 [submodule "httpd"]
 	path = httpd
 	url = git@github.com:pylover/esp8266-httpserver.git
+[submodule "ringbuffer"]
+	path = ringbuffer
+	url = git@github.com:pylover/esp8266-ringbuffer.git
+[submodule "debug"]
+	path = debug
+	url = git@github.com:pylover/esp8266-debug.git
