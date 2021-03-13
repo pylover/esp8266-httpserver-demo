@@ -4,8 +4,6 @@
 #include "httpd.h"
 #include "uns.h"
 #include "tcpd.h"
-#include "session.h"
-#include "datamodel.h"
 
 #include <upgrade.h>
 #include <osapi.h>
@@ -28,7 +26,7 @@ err_t reboot_fotamode(struct httpd_session *s) {
     bufflen = os_sprintf(buff, "Rebooting to %s mode...\r\n",
         image == UPGRADE_FW_BIN1? "APP": "FOTA");
     status_update(500, 500, 1, reboot_fotamode_cb);
-    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+    return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, buff, bufflen);
 }
 
 
@@ -40,19 +38,19 @@ httpd_err_t demo_download(struct httpd_session *s) {
         return err;
     }
     
-    err = session_send(s, "Foo"CR, 5);
+    err = httpd_send(s, "Foo"CR, 5);
     if (err) {
         return err;
     }
-    err = session_send(s, "Bar"CR, 5);
+    err = httpd_send(s, "Bar"CR, 5);
     if (err) {
         return err;
     }
-    err = session_send(s, "Baz"CR, 5);
+    err = httpd_send(s, "Baz"CR, 5);
     if (err) {
         return err;
     }
-    err = session_send(s, "Qux"CR, 5);
+    err = httpd_send(s, "Qux"CR, 5);
     if (err) {
         return err;
     }
@@ -74,20 +72,21 @@ httpd_err_t _multipart_stream_cb(struct httpd_multipart *m, char *data,
     CHK("CB: %dB l: %d f: %d", len, lastchunk, finish);
     
     if (downloader && len) {
-        err = session_send(downloader, data, len);
+        err = httpd_send(downloader, data, len);
         if (err) {
             return err;
         }
     }
     if (finish){
         CHK("Response uploader");
-        err = httpd_response_text(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
+        err = HTTPD_RESPONSE_TEXT(m->session, HTTPSTATUS_OK, "Ok"CR, 4);
         if(err) {
             return err;
         }
         if (downloader != NULL) {
             CHK("Finalize downloader");
             httpd_response_finalize(downloader, HTTPD_FLAG_CLOSE);
+            downloader = NULL;
         }
     }
     return HTTPD_OK;
@@ -96,9 +95,17 @@ httpd_err_t _multipart_stream_cb(struct httpd_multipart *m, char *data,
 
 static ICACHE_FLASH_ATTR
 httpd_err_t demo_download_chunk_sent(struct httpd_session *s) {
-    size16_t available = session_resp_len(s);
+    httpd_err_t err;
+    size16_t available = HTTPD_RESP_LEN(s);
     //CHK("SENT CB: avail: %d", available);
-    if ((uploader != NULL) && (!available)) {
+    if (available) {
+        return HTTPD_OK;
+    }
+    
+    if (s->status >= HTTPD_SESSIONSTATUS_CLOSING) {
+        uploader = NULL;
+    }
+    if (uploader != NULL) {
         if(!HTTPD_SCHEDULE(HTTPD_SIG_RECVUNHOLD, 
                     (os_param_t) uploader->session)) {
             return HTTPD_ERR_TASKQ_FULL;
@@ -133,7 +140,7 @@ httpd_err_t _multipart_cb(struct httpd_multipart *m, char *data,
     char tmp[HTTPD_MP_CHUNK];
     if (finish) {
         CHK("Finish");
-        return httpd_response_text(m->session, HTTPSTATUS_OK, buff, bufflen);
+        return HTTPD_RESPONSE_TEXT(m->session, HTTPSTATUS_OK, buff, bufflen);
     }
 
     if (lastchunk) {
@@ -170,7 +177,7 @@ err_t demo_urlencoded(struct httpd_session *s) {
     
     bufflen = 0;
     httpd_form_urlencoded_parse(s, _form_cb);
-    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+    return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, buff, bufflen);
 }
 
 static ICACHE_FLASH_ATTR
@@ -178,7 +185,7 @@ err_t demo_querystring(struct httpd_session *s) {
     err_t err;
     bufflen = 0;
     httpd_querystring_parse(s, _form_cb);
-    return httpd_response_text(s, HTTPSTATUS_OK, buff, bufflen);
+    return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, buff, bufflen);
 }
 
 
@@ -200,7 +207,7 @@ err_t demo_favicon(struct httpd_session *s) {
         );
     if (result != SPI_FLASH_RESULT_OK) {
         os_printf("SPI Flash write failed: %d\r\n", result);
-        httpd_response_internalservererror(s);
+        HTTPD_RESPONSE_INTERNALSERVERERROR(s);
         return;
     }
     return httpd_response(s, HTTPSTATUS_OK, NULL, 0, 
@@ -219,7 +226,7 @@ err_t demo_headersecho(struct httpd_session *s) {
 
 static ICACHE_FLASH_ATTR
 err_t demo_index(struct httpd_session *s) {
-    return httpd_response_text(s, HTTPSTATUS_OK, "Index", 5);
+    return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, "Index", 5);
 }
 
 
