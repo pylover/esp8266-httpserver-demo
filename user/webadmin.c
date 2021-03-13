@@ -20,7 +20,7 @@ void reboot_fotamode_cb() {
 
 
 static ICACHE_FLASH_ATTR
-err_t reboot_fotamode(struct httpd_session *s) {
+httpd_err_t reboot_fotamode(struct httpd_session *s) {
     uint8_t image = system_upgrade_userbin_check();
     bufflen = os_sprintf(buff, "Rebooting to %s mode...\r\n",
         image == UPGRADE_FW_BIN1? "APP": "FOTA");
@@ -167,7 +167,7 @@ void _form_cb(struct httpd_session *s, const char *field,
 
 
 static ICACHE_FLASH_ATTR
-err_t demo_urlencoded(struct httpd_session *s) {
+httpd_err_t demo_urlencoded(struct httpd_session *s) {
     err_t err;
     uint32_t more = HTTPD_REQUESTBODY_REMAINING(s);
     if (more) {
@@ -180,7 +180,7 @@ err_t demo_urlencoded(struct httpd_session *s) {
 }
 
 static ICACHE_FLASH_ATTR
-err_t demo_querystring(struct httpd_session *s) {
+httpd_err_t demo_querystring(struct httpd_session *s) {
     err_t err;
     bufflen = 0;
     httpd_querystring_parse(s, _form_cb);
@@ -189,7 +189,7 @@ err_t demo_querystring(struct httpd_session *s) {
 
 
 static ICACHE_FLASH_ATTR
-err_t demo_favicon(struct httpd_session *s) {
+httpd_err_t demo_favicon(struct httpd_session *s) {
     #define FAVICON_SIZE    495
 
     #if SPI_SIZE_MAP == 2
@@ -216,7 +216,7 @@ err_t demo_favicon(struct httpd_session *s) {
 
 
 static ICACHE_FLASH_ATTR
-err_t demo_headersecho(struct httpd_session *s) {
+httpd_err_t demo_headersecho(struct httpd_session *s) {
     return httpd_response(s, HTTPSTATUS_OK, s->request.headers, 
             s->request.headerscount, NULL, NULL, 0, false);
 }
@@ -224,7 +224,7 @@ err_t demo_headersecho(struct httpd_session *s) {
 
 
 static ICACHE_FLASH_ATTR
-err_t demo_index(struct httpd_session *s) {
+httpd_err_t demo_index(struct httpd_session *s) {
     return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, "Index", 5);
 }
 

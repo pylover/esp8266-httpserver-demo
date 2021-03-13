@@ -1,15 +1,6 @@
-[submodule "httpserver"]
-	path = httpserver
-	url = git@github.com:pylover/esp8266-httpserver.git
 [submodule "uns"]
 	path = uns
 	url = git@github.com:pylover/esp8266-unslib.git
 [submodule "httpd"]
 	path = httpd
 	url = git@github.com:pylover/esp8266-httpserver.git
-[submodule "http"]
-	path = http
-	url = git@github.com:pylover/esp8266-httpclient.git
-[submodule "ringbuffer"]
-	path = ringbuffer
-	url = git@github.com:pylover/ringbuffer.git
