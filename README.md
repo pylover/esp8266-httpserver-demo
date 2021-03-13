@@ -29,3 +29,9 @@ make flash_map6user1
 ```bash
 make test
 ```
+
+```
+TODO: Readme
+TODO: Sequence diagrams
+TODO: Speed optimize
+```

@@ -52,7 +52,7 @@ function md5 () {
 
 function binsize() {
   local s=$(ls -l $1 | cut -d' ' -f5)
-  printf "${LB}%7d ${LM}Bytes${C}   ===> %s\n" $s $(basename $1)
+  printf "${LB}%7d ${LM}Bytes${C} => %s\n" $s $(basename $1)
 }
 
 

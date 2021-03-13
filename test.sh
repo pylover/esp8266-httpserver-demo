@@ -77,5 +77,5 @@ echo -e "$C"
 binsize user/.output/eagle/debug/lib/libuser.a
 binsize httpd/.output/eagle/debug/lib/libhttpd.a
 binsize uns/.output/eagle/debug/lib/libuns.a 
-echo '--------------------------'
+echo ' ------------------------------------'
 binsize bin/upgrade/user2.4096.new.6.bin
