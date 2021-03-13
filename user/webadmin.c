@@ -3,7 +3,6 @@
 #include "webadmin.h"
 #include "httpd.h"
 #include "uns.h"
-#include "tcpd.h"
 
 #include <upgrade.h>
 #include <osapi.h>
