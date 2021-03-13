@@ -27,6 +27,10 @@ function red () {
 function grn () {
   echo -e "${G}$@${C}"
 }
+function ylw () {
+  echo -e "${Y}$@${C}"
+}
+
 # ANSI COLORS end
 
 

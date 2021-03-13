@@ -2,6 +2,7 @@
 
 source testing.sh
 
+
 ADDR=192.168.8.162
 NAME="home.nodemcu"
 
@@ -48,9 +49,14 @@ dd if=/dev/urandom bs=1 count=100000 of=${tmp1} >> /dev/null 2>&1
 uns http -b download ${NAME}/multipartstreams > ${tmp2} & \
   uns http upload ${NAME}/multipartstreams @foo=${tmp1} > /dev/null
 assert-eq "Multipart streaming" "$(cat $tmp1 | md5)" "$(cat $tmp2 | md5)"
-rm ${tmp1}
-rm ${tmp2}
-
+if [ "$?" != 0 ]; then
+  ylw "Source file: ${tmp1}" 
+  ylw "Target file: ${tmp2}" 
+  exit 1
+else
+  rm ${tmp1}
+  rm ${tmp2}
+fi
 
 # Multipart, single field
 tmp=$(tempfile)
