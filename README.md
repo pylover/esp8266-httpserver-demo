@@ -6,12 +6,14 @@
 Follow [this](https://github.com/pylover/esp8266-env) instruction 
 to setup your environment.
 
+Connect an esp8266 board to your PC.
+
 ```bash
 cd esp8266-env
 source activate.sh
 cd ..
 
-cd $DEST 
+cd esp8266-httpserver-demo
 bash gen_misc.sh
 ```
 
