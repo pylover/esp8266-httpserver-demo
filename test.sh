@@ -2,9 +2,11 @@
 
 source testing.sh
 
+#ADDR=192.168.8.162
+#NAME="home.nodemcu"
 
-ADDR=192.168.8.162
-NAME="home.nodemcu"
+ADDR=192.168.43.1
+NAME="home.NewDevice"
 
 assert-eq "UNS resolve" ${ADDR} `uns resolve --short ${NAME}`
 assert-eq "Simple GET" \
@@ -16,7 +18,7 @@ assert-eq "HTTP Headers" "\
 Server: esp8266-HTTPd/2.0.0
 Connection: keep-alive
 Content-Length: 0
-Host: 192.168.8.162
+Host: ${ADDR}
 User-Agent: python-requests/2.22.0
 Accept-Encoding: gzip, deflate
 Accept: */* -H'foo: bar'" \
@@ -32,10 +34,19 @@ assert-eq "Querystring" \
   "foo=bar baz=qux " \
   "$(uns http echo "${NAME}/queries?foo=bar&baz=qux")"
 
+assert-eq "Querystring Empty field" \
+  "foo= baz=qux quux= " \
+  "$(uns http echo "${NAME}/queries?foo=&baz=qux&quux=")"
+
 
 assert-eq "URL encoded form" \
   "foo=bar baz=qux " \
   "$(uns http ECHO ${NAME}/urlencodedforms foo=bar baz=qux)"
+
+assert-eq "URL encoded form empty field" \
+  "foo=bar baz=qux quux= " \
+  "$(uns http ECHO ${NAME}/urlencodedforms foo=bar baz=qux quux=)"
+
 
 assert-eq "Streaming" \
   "$(printf 'Foo\r\nBar\r\nBaz\r\nQux\r\n')" \

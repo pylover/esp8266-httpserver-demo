@@ -160,9 +160,10 @@ httpd_err_t demo_multipart(struct httpd_session *s) {
 
 
 static ICACHE_FLASH_ATTR
-void _form_cb(struct httpd_session *s, const char *field, 
+httpd_err_t _form_cb(struct httpd_session *s, const char *field, 
         const char *value) {
     bufflen += os_sprintf(buff + bufflen, "%s=%s ", field, value);
+    return HTTPD_OK;
 }
 
 
@@ -175,7 +176,10 @@ httpd_err_t demo_urlencoded(struct httpd_session *s) {
     }
     
     bufflen = 0;
-    httpd_form_urlencoded_parse(s, _form_cb);
+    err = httpd_form_urlencoded_parse(s, _form_cb);
+    if (err) {
+        return err;
+    }
     return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, buff, bufflen);
 }
 
@@ -183,7 +187,10 @@ static ICACHE_FLASH_ATTR
 httpd_err_t demo_querystring(struct httpd_session *s) {
     err_t err;
     bufflen = 0;
-    httpd_querystring_parse(s, _form_cb);
+    err = httpd_querystring_parse(s, _form_cb);
+    if (err) {
+        return err;
+    }
     return HTTPD_RESPONSE_TEXT(s, HTTPSTATUS_OK, buff, bufflen);
 }
 
