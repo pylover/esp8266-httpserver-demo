@@ -1,9 +1,9 @@
 // Internal 
-#include "common.h"
 #include "user_config.h"
 #include "partition.h"
 #include "wifi.h"
 #include "params.h" 
+#include "debug.h"
 #include "status.h"
 #include "uns.h"
 #include "interrupt.h"
@@ -21,7 +21,7 @@
 
 
 static bool configured;
-static Params params;
+static struct params params;
 
 
 static ICACHE_FLASH_ATTR 
@@ -38,11 +38,6 @@ void wifi_connect_cb(uint8_t status) {
         uns_init(hostname);
         INFO("WIFI Connected to: %s", params.station_ssid);
         wifi_ap_stop();
-
-        if (params.apploaded && (REBOOTDELAY > 0)) {
-            INFO("Reboot in %d seconds", REBOOTDELAY);
-            status_update(500, 500, REBOOTDELAY, reboot_appmode);
-        }
     } 
     else {
         uns_deinit();    
@@ -51,20 +46,14 @@ void wifi_connect_cb(uint8_t status) {
     }
 }
 
-//static ICACHE_FLASH_ATTR
-//void startweb() {
-//	webadmin_start();
-//}
-//static ICACHE_FLASH_ATTR
-//void stopweb() {
-//	webadmin_stop();
-//    status_update(500, 500, 10, startweb);
-//}
 
 ICACHE_FLASH_ATTR
 void boothello() {
+    uint8_t image = system_upgrade_userbin_check();
     INFO(__name__" version: "__version__);
     INFO("My full name is: %s.%s", params.zone, params.name);
+    INFO("Boot image: user%d", image + 1);
+    INFO("Free memory: %d KB", system_get_free_heap_size());
     if (!configured) {
         INFO(
             "Connect to WIFI Access point: %s, "
@@ -72,11 +61,10 @@ void boothello() {
             params.name
         );
     }
-    status_update(1000, 1000, INFINITE, NULL);
-    //status_update(1000, 1000, 10, stopweb);
+    status_update(150, 850, INFINITE, NULL);
 
     /* Web UI */
-	webadmin_start();
+	webadmin_start(&params);
 
 }
 
@@ -92,9 +80,9 @@ void user_init(void) {
 
 	configured = params_load(&params);
 	if (!configured) {
-		ERROR("Cannot load Params.");
+		ERROR("Cannot load params");
 		if(!params_defaults(&params)) {
-			ERROR("Cannot save params.");
+			ERROR("Cannot save params");
 			return;
 		}
 	}
@@ -110,7 +98,7 @@ void user_init(void) {
     // Disable wifi led before infrared
     wifi_status_led_uninstall();
 
-    status_update(100, 500, 5, boothello);
+    status_update(200, 200, 15, boothello);
 }
 
 

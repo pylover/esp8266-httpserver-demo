@@ -1,8 +1,8 @@
 #include "wifi.h"
+#include "debug.h"
 #include "user_config.h"
 #include "params.h"
 #include "uns.h"
-#include "common.h"
 
 #include <user_interface.h>
 #include <osapi.h>
@@ -16,7 +16,7 @@
 static ETSTimer WiFiLinker;
 static uint8_t wifiStatus = STATION_IDLE;
 static uint8_t lastWifiStatus = STATION_IDLE;
-WifiCallback wifiCb = NULL;
+static wificb wifiCb = NULL;
 
 
 #define WIFI_CHECKINTERVAL_STABLE       5000
@@ -36,19 +36,19 @@ static void ICACHE_FLASH_ATTR wifi_check_ip(void *arg) {
     else
     {
         if(wifi_station_get_connect_status() == STATION_WRONG_PASSWORD) {
-            INFO("STATION_WRONG_PASSWORD.");
+            INFO("STATION_WRONG_PASSWORD");
             wifi_station_connect();
         }
         else if(wifi_station_get_connect_status() == STATION_NO_AP_FOUND) {
-            INFO("STATION_NO_AP_FOUND.");
+            INFO("STATION_NO_AP_FOUND");
             wifi_station_connect();
         }
         else if(wifi_station_get_connect_status() == STATION_CONNECT_FAIL) {
-            INFO("STATION_CONNECT_FAIL.");
+            INFO("STATION_CONNECT_FAIL");
             wifi_station_connect();
         }
         //else {
-        //    INFO("STATION_IDLE.");
+        //    INFO("STATION_IDLE");
         //}
 
         os_timer_setfn(&WiFiLinker, (os_timer_func_t *)wifi_check_ip, NULL);
@@ -90,7 +90,7 @@ wifi_init_softap(const char *ssid, const char *psk) {
     // Get the device mac address
     bool ok = wifi_get_macaddr(SOFTAP_IF, &mac[0]);
     if (!ok) {
-        ERROR("Cannot get softap macaddr.");
+        ERROR("Cannot get softap macaddr");
     }
 
     // initialization
@@ -101,17 +101,9 @@ wifi_init_softap(const char *ssid, const char *psk) {
     wifi_softap_get_config(config);     
 
     // Updating ssid
-    if (os_strcmp(ssid, PARAMS_DEFAULT_NAME) == 0) {
-        os_sprintf(config->ssid, "%s_%02x%02x%02x%02x%02x%02x", 
-                ssid,
-                MAC2STR(mac)
-            );
-    }
-    else {
-        os_sprintf(config->ssid, "%s", ssid);
-    }
+    os_sprintf(config->ssid, "%s", ssid);
 
-    INFO("SSID: %s.", config->ssid);
+    INFO("SSID: %s", config->ssid);
     config->ssid_len = 0; 
     if (os_strlen(psk)) {
         os_sprintf(config->password, psk);
@@ -129,13 +121,13 @@ wifi_init_softap(const char *ssid, const char *psk) {
     ok = wifi_softap_set_config(config); 
     os_free(config);
     if (!ok) {
-        ERROR("Cannot set softap config.");
+        ERROR("Cannot set softap config");
         return;
     }
 
     struct station_info * station = wifi_softap_get_station_info();
     while (station) {
-        os_printf("bssid : MACSTR, ip : IPSTR/n", MAC2STR(station->bssid), 
+        INFO("bssid: "MACSTR", ip: "IPSTR, MAC2STR(station->bssid), 
                 IP2STR(&station->ip));
         station = STAILQ_NEXT(station, next);
     }
@@ -161,7 +153,7 @@ void wifi_ap_start() {
     if(wifi_get_opmode() == STATIONAP_MODE) {
         return;
     }
-    INFO("Starting softap");
+    INFO("Starting softap\n");
     wifi_set_opmode_current(STATIONAP_MODE);
     wifi_softap_dhcps_start(); // enable soft-AP DHCP server
 }
@@ -172,17 +164,17 @@ void wifi_ap_stop() {
     if(wifi_get_opmode() == STATION_MODE) {
         return;
     }
-    INFO("Stopping softap");
+    INFO("Stopping softap\n");
     wifi_softap_dhcps_stop(); // disable soft-AP DHCP server
     wifi_set_opmode_current(STATION_MODE);
     wifi_station_connect();
 }
 
 
-void ICACHE_FLASH_ATTR wifi_start(Params *params, WifiCallback cb) {
+void ICACHE_FLASH_ATTR wifi_start(struct params *params, wificb cb) {
     struct station_config stationConf;
     
-    INFO("WIFI_INIT.");
+    INFO("WIFI_INIT");
     wifi_init_softap(params->name, params->ap_psk);
     wifi_set_opmode_current(STATIONAP_MODE);
 

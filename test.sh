@@ -2,11 +2,8 @@
 
 source testing.sh
 
-#ADDR=192.168.8.162
-#NAME="home.nodemcu"
-
-ADDR=192.168.43.1
-NAME="home.NewDevice"
+ADDR=192.168.8.162
+NAME="dev.node"
 
 assert-eq "UNS resolve" ${ADDR} `uns resolve --short ${NAME}`
 assert-eq "Simple GET" \
@@ -19,7 +16,7 @@ Server: esp8266-HTTPd/2.0.0
 Connection: keep-alive
 Content-Length: 0
 Host: ${ADDR}
-User-Agent: python-requests/2.22.0
+User-Agent: python-requests/2.25.1
 Accept-Encoding: gzip, deflate
 Accept: */* -H'foo: bar'" \
   "`uns http --include-headers echo ${NAME}/headers` -H'foo: bar'"

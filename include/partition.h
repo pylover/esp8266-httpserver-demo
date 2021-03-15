@@ -18,6 +18,8 @@ Flash Maps
 
 #define _4KB 0x1000
 
+#define SYSTEM_PARTITION_OTA1_ADDR							0x01000
+
 #if ((SPI_FLASH_SIZE_MAP == 0) || (SPI_FLASH_SIZE_MAP == 1))
 #error "The flash map is not supported"
 

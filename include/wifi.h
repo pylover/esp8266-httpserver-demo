@@ -19,7 +19,7 @@
 #define WIFI_SOFTAP_CHANNEL		7
 
 
-typedef void (*WifiCallback)(uint8_t);
+typedef void (*wificb)(uint8_t);
 
 struct dhcp_client_info {
 	ip_addr_t ip_addr;
@@ -29,7 +29,7 @@ struct dhcp_client_info {
 	uint8 pad[3];
 };
 
-void wifi_start(Params *params, WifiCallback cb);
+void wifi_start(struct params *params, wificb cb);
 void wifi_ap_start();
 void wifi_ap_stop();
 
